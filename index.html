@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    .header-banner { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 40px 20px; border-radius: 0 0 25px 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .card { border: none; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); margin-bottom: 25px; }
+    .rating-group { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; }
+    .rating-item { flex: 1; text-align: center; }
+    .rating-item input { display: none; }
+    .rating-item label { 
+      display: block; padding: 12px 5px; background: #fff; border: 2px solid #e9ecef; 
+      border-radius: 10px; cursor: pointer; font-weight: bold; color: #495057; transition: 0.3s;
+    }
+    .rating-item input:checked + label { background: #007bff; color: white; border-color: #007bff; transform: scale(1.05); }
+    #loading { display: none; position: fixed; top: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; }
+    .form-label { font-weight: 600; color: #343a40; }
+    .section-title { border-left: 5px solid #007bff; padding-left: 15px; margin-bottom: 20px; color: #0056b3; }
+  </style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner-grow text-primary" role="status"></div>
+  <span class="mt-2 fw-bold">Mengirim Jawaban...</span>
+</div>
+
+<div class="header-banner text-center">
+  <h3>Survei Kepuasan Masyarakat</h3>
+  <p class="mb-0">UPTD Pusat Kesehatan Hewan (Puskeswan)</p>
+</div>
+
+<div class="container mt-4 pb-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <form id="surveyForm">
+        
+        <!-- BAGIAN 1: Persetujuan -->
+        <div class="card p-4 border-start border-primary border-5 shadow">
+          <label class="fw-bold mb-3 fs-5">Apakah Bersedia Mengisi Kuisioner dengan Jawaban Sebenarnya? *</label>
+          <div class="d-flex gap-4">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="persetujuan" value="Bersedia" id="c1" required>
+              <label class="form-check-label fw-bold text-success" for="c1">Bersedia</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="persetujuan" value="Tidak Bersedia" id="c2">
+              <label class="form-check-label fw-bold text-danger" for="c2">Tidak Bersedia</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- BAGIAN 2: Main Form -->
+        <div id="mainForm" style="display:none;">
+          <div class="card p-4">
+            <h5 class="section-title">Identitas Responden</h5>
+            <div class="mb-3">
+              <label class="form-label">Email Aktif *</label>
+              <input type="email" name="email" class="form-control" placeholder="nama@email.com" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Nama Lengkap *</label>
+              <input type="text" name="nama" class="form-control" required>
+            </div>
+            <div class="row">
+              <div class="col-sm-6 mb-3">
+                <label class="form-label">Umur *</label>
+                <input type="number" name="umur" class="form-control" required>
+              </div>
+              <div class="col-sm-6 mb-3">
+                <label class="form-label">Jenis Kelamin *</label>
+                <select name="jk" class="form-select" required>
+                  <option value="">Pilih...</option>
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Pendidikan Terakhir *</label>
+              <select name="pendidikan" class="form-select" required>
+                <option value="">Pilih...</option>
+                <option value="SD">SD</option>
+                <option value="SMP">SMP</option>
+                <option value="SMA/K">SMA/K</option>
+                <option value="D3">D3</option>
+                <option value="S1">S1</option>
+                <option value="S2">S2</option>
+                <option value="S3">S3</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Pekerjaan Utama *</label>
+              <select name="pekerjaan" class="form-select" required>
+                <option value="">Pilih...</option>
+                <option value="PNS / TNI / POLRI">PNS / TNI / POLRI</option>
+                <option value="Pegawai Swasta">Pegawai Swasta</option>
+                <option value="Wiraswasta / Usahawan">Wiraswasta / Usahawan</option>
+                <option value="Pelajar / Mahasiswa">Pelajar / Mahasiswa</option>
+                <option value="Yang lain">Yang lain</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Suku Bangsa *</label>
+              <select name="suku" class="form-select" required>
+                <option value="">Pilih...</option>
+                <option value="Sunda">Sunda</option>
+                <option value="Jawa">Jawa</option>
+                <option value="Madura">Madura</option>
+                <option value="Batak">Batak</option>
+                <option value="Minang">Minang</option>
+                <option value="Yang lain">Yang lain</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card p-4">
+            <h5 class="section-title">Penilaian Pelayanan</h5>
+            <p class="text-muted small mb-4">Skor: 1=Buruk, 2=Cukup, 3=Baik, 4=Sangat Baik</p>
+            <div id="questions"></div>
+          </div>
+
+          <div class="card p-4">
+            <h5 class="section-title">Kritik & Saran</h5>
+            <textarea name="saran" class="form-control" rows="4" placeholder="Masukan Anda..."></textarea>
+          </div>
+
+          <div class="mb-5">
+            <button type="submit" class="btn btn-primary w-100 btn-lg shadow rounded-pill py-3 fw-bold">KIRIM SURVEI</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const questions = [
+    "Kesesuaian persyaratan pelayanan", "Kemudahan prosedur pelayanan", "Kecepatan pelayanan",
+    "Kewajaran biaya/tarif pelayanan", "Kesesuaian hasil pelayanan", "Kompetensi petugas",
+    "Kesopanan petugas", "Kualitas sarana prasarana", "Penanganan pengaduan"
+  ];
+
+  const qContainer = document.getElementById('questions');
+  questions.forEach((q, i) => {
+    let n = i+1;
+    qContainer.innerHTML += `
+      <div class="mb-4 p-2 border-bottom">
+        <label class="form-label d-block mb-3">${n}. ${q} *</label>
+        <div class="rating-group">
+          ${[1,2,3,4].map(v => `
+            <div class="rating-item">
+              <input type="radio" name="q${n}" id="q${n}_${v}" value="${v}" required>
+              <label for="q${n}_${v}">${v}</label>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  });
+
+  document.getElementsByName('persetujuan').forEach(radio => {
+    radio.addEventListener('change', function() {
+      const mainForm = document.getElementById('mainForm');
+      if (this.value === 'Bersedia') {
+        mainForm.style.display = 'block';
+        mainForm.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        mainForm.style.display = 'none';
+        alert('Responden harus bersedia untuk melanjutkan.');
+      }
+    });
+  });
+
+  document.getElementById('surveyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    document.getElementById('loading').style.display = 'flex';
+    
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData);
+
+    // MENGGUNAKAN google.script.run (LEBIH AMAN DARI ERROR FETCH/CORS)
+    google.script.run
+      .withSuccessHandler(function(result) {
+        document.getElementById('loading').style.display = 'none';
+        if(result.status === 'success') {
+          alert('Terima kasih! Data berhasil disimpan.');
+          location.reload();
+        } else {
+          alert('Server Error: ' + result.message);
+        }
+      })
+      .withFailureHandler(function(error) {
+        document.getElementById('loading').style.display = 'none';
+        alert('Gagal mengirim data. Pastikan Anda sudah memberikan izin akses (Authorize) dan Deploy ulang sebagai Web App.');
+      })
+      .processForm(payload);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+/**
+ * ==============================================================================
+ * BACKEND SISTEM SURVEI KEPUASAN MASYARAKAT (SKM) PUSKESWAN
+ * ==============================================================================
+ * Deskripsi: Skrip ini berfungsi sebagai backend untuk aplikasi web survei
+ * menggunakan Google Apps Script, dengan Google Sheets sebagai database.
+ * * Fitur:
+ * 1. Routing halaman (Formulir Responden & Dashboard Admin)
+ * 2. Pemrosesan data formulir (Entry ke Spreadsheet)
+ * 3. Kalkulasi otomatis Indeks Kepuasan Masyarakat (IKM)
+ * 4. Setup otomatis struktur spreadsheet
+ * ==============================================================================
+ */
+
+/**
+ * Fungsi Utama: Menangani permintaan GET (Routing Halaman)
+ * @param {Object} e Parameter event dari Google Apps Script
+ * @return {HtmlOutput} Halaman HTML yang sesuai
+ */
+function doGet(e) {
+  const page = e.parameter.page;
+  
+  // Jika parameter ?page=admin digunakan, tampilkan Dashboard
+  if (page === 'admin') {
+    return HtmlService.createTemplateFromFile('dashboard')
+      .evaluate()
+      .setTitle('Dashboard Admin - Puskeswan')
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  }
+  
+  // Default: Tampilkan Formulir Survei untuk Responden
+  return HtmlService.createTemplateFromFile('index')
+    .evaluate()
+    .setTitle('Survei Kepuasan - Puskeswan')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/**
+ * Fungsi Pemrosesan Form: Menyimpan data dari index.html ke Spreadsheet
+ * @param {Object} data Objek data yang dikirim dari formulir
+ * @return {Object} Status keberhasilan atau error
+ */
+function processForm(data) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('RESPON');
+    
+    // Validasi: Pastikan sheet database sudah ada
+    if (!sheet) {
+      throw new Error("Sheet bernama 'RESPON' tidak ditemukan. Harap jalankan fungsi setupSheet terlebih dahulu.");
+    }
+
+    const lastRow = sheet.getLastRow();
+    const nextNo = lastRow > 1 ? sheet.getRange(lastRow, 1).getValue() + 1 : 1;
+    
+    // Menyusun data ke dalam baris sesuai urutan kolom database
+    const rowData = [
+      nextNo,           // No Urut
+      new Date(),       // Timestamp (Tanggal & Waktu)
+      data.email,       // Email Responden
+      data.nama,        // Nama Lengkap
+      data.umur,        // Usia
+      data.jk,          // Jenis Kelamin
+      data.pendidikan,  // Tingkat Pendidikan
+      data.pekerjaan,   // Pekerjaan Utama
+      data.suku,        // Suku Bangsa
+      data.q1, data.q2, data.q3, data.q4, data.q5, data.q6, data.q7, data.q8, data.q9, // Skor Pertanyaan
+      data.saran        // Kritik dan Saran
+    ];
+    
+    sheet.appendRow(rowData);
+    return { status: 'success' };
+    
+  } catch (err) {
+    return { status: 'error', message: err.toString() };
+  }
+}
+
+/**
+ * Fungsi Dashboard: Mengambil & menghitung ringkasan data untuk visualisasi
+ * @return {Object} Ringkasan statistik (Total, Rata-rata per Unsur, IKM)
+ */
+function getSummaryData() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('RESPON');
+    const data = sheet.getDataRange().getValues();
+    
+    // Label untuk 9 Unsur Pelayanan sesuai regulasi terkait survei kepuasan
+    const labels = [
+      "Persyaratan", "Prosedur", "Kecepatan", "Biaya", "Hasil", 
+      "Kompetensi", "Kesopanan", "Sarpras", "Pengaduan"
+    ];
+
+    // Jika belum ada data responden (hanya ada header)
+    if (data.length <= 1) {
+      return { total: 0, averages: new Array(9).fill(0), ikm: 0, labels: labels };
+    }
+    
+    const rows = data.slice(1);
+    const total = rows.length;
+    let sums = new Array(9).fill(0);
+    
+    // Menghitung total skor untuk setiap pertanyaan
+    rows.forEach(row => {
+      for (let i = 0; i < 9; i++) {
+        // Data skor Q1 dimulai dari kolom ke-10 (indeks 9) di Spreadsheet
+        sums[i] += parseFloat(row[i + 9] || 0);
+      }
+    });
+    
+    // Menghitung rata-rata per unsur dan skor IKM total
+    const averages = sums.map(s => (s / total).toFixed(2));
+    const totalAvg = averages.reduce((a, b) => parseFloat(a) + parseFloat(b), 0) / 9;
+    const ikm = (totalAvg * 25).toFixed(2); // Mengonversi nilai 1-4 ke skala 0-100
+    
+    return {
+      total: total,
+      averages: averages,
+      ikm: ikm,
+      labels: labels
+    };
+  } catch (e) {
+    return { error: e.toString() };
+  }
+}
+
+/**
+ * Fungsi Inisialisasi: Membuat struktur sheet 'RESPON' secara otomatis
+ * Jalankan fungsi ini satu kali sebelum aplikasi digunakan.
+ */
+function setupSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('RESPON');
+  
+  // Buat sheet jika belum ada
+  if (!sheet) {
+    sheet = ss.insertSheet('RESPON');
+  }
+  
+  // Header kolom untuk database
+  const headers = [
+    'No', 'Tanggal', 'Email', 'Nama Lengkap', 'Umur', 'Jenis Kelamin', 
+    'Pendidikan', 'Pekerjaan', 'Suku', 'Q1', 'Q2', 'Q3', 'Q4', 'Q5', 
+    'Q6', 'Q7', 'Q8', 'Q9', 'Saran'
+  ];
+  
+  sheet.getRange(1, 1, 1, headers.length)
+    .setValues([headers])
+    .setFontWeight('bold')
+    .setBackground('#cfe2f3');
+    
+  sheet.setFrozenRows(1); // Mengunci baris judul
+  SpreadsheetApp.getUi().alert('Konfigurasi Berhasil: Sheet RESPON siap digunakan!');
+} 
